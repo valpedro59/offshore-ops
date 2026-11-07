@@ -1,0 +1,45 @@
+# Sprint 1 : docker compose -f infra/compose.yml up -d postgres-auth postgres-stock
+name: offshore-ops
+services:
+  postgres-auth:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: offshore, POSTGRES_PASSWORD: offshore, POSTGRES_DB: auth }
+    ports: ['5433:5432']
+    volumes: ['pg-auth:/var/lib/postgresql/data']
+    healthcheck:
+      {
+        test: ['CMD-SHELL', 'pg_isready -U offshore -d auth'],
+        interval: 5s,
+        timeout: 3s,
+        retries: 10,
+      }
+
+  postgres-stock:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: offshore, POSTGRES_PASSWORD: offshore, POSTGRES_DB: stock }
+    ports: ['5434:5432']
+    volumes: ['pg-stock:/var/lib/postgresql/data']
+    healthcheck:
+      {
+        test: ['CMD-SHELL', 'pg_isready -U offshore -d stock'],
+        interval: 5s,
+        timeout: 3s,
+        retries: 10,
+      }
+
+  # Sprints suivants
+  mongo:
+    image: mongo:7
+    profiles: ['later']
+    ports: ['27017:27017']
+    volumes: ['mongo:/data/db']
+
+  redis:
+    image: redis:7-alpine
+    profiles: ['later']
+    ports: ['6379:6379']
+
+volumes:
+  pg-auth:
+  pg-stock:
+  mongo:

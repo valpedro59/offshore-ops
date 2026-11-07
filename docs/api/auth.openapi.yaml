@@ -1,0 +1,1036 @@
+openapi: 3.1.0
+info:
+  title: Offshore Ops – auth-service
+  version: 0.1.0
+  description: "Authentification, sociétés, utilisateurs et rôles. Généré depuis
+    les schémas zod de @offshore/shared : ne pas éditer à la main."
+servers:
+  - url: http://localhost:4001
+    description: Local (via la gateway en sprint 2)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details: {}
+            correlationId:
+              type: string
+          required:
+            - code
+            - message
+      required:
+        - error
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: &a1
+            - admin
+            - storekeeper
+            - hse
+            - viewer
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - companyId
+        - email
+        - fullName
+        - role
+        - active
+        - createdAt
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+            - Bearer
+        expiresIn:
+          type: integer
+          description: Durée de vie du jeton d'accès, en secondes
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            companyId:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            fullName:
+              type: string
+            role:
+              type: string
+              enum: *a1
+            active:
+              type: boolean
+            createdAt:
+              type: string
+              format: date-time
+          required:
+            - id
+            - companyId
+            - email
+            - fullName
+            - role
+            - active
+            - createdAt
+      required:
+        - accessToken
+        - refreshToken
+        - tokenType
+        - expiresIn
+        - user
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+            - Bearer
+        expiresIn:
+          type: integer
+          description: Durée de vie du jeton d'accès, en secondes
+      required:
+        - accessToken
+        - refreshToken
+        - tokenType
+        - expiresIn
+  parameters: {}
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Créer une société et son administrateur
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                password:
+                  type: string
+                  minLength: 10
+                  maxLength: 128
+              required:
+                - companyName
+                - fullName
+                - email
+                - password
+      responses:
+        "201":
+          description: Société créée, utilisateur connecté
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  tokenType:
+                    type: string
+                    enum:
+                      - Bearer
+                  expiresIn:
+                    type: integer
+                    description: Durée de vie du jeton d'accès, en secondes
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      companyId:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                        format: email
+                      fullName:
+                        type: string
+                      role:
+                        type: string
+                        enum: *a1
+                      active:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                    required:
+                      - id
+                      - companyId
+                      - email
+                      - fullName
+                      - role
+                      - active
+                      - createdAt
+                required:
+                  - accessToken
+                  - refreshToken
+                  - tokenType
+                  - expiresIn
+                  - user
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/login:
+    post:
+      summary: Connexion
+      description: Après 5 échecs consécutifs, le compte est verrouillé 15 minutes.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Jetons émis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  tokenType:
+                    type: string
+                    enum:
+                      - Bearer
+                  expiresIn:
+                    type: integer
+                    description: Durée de vie du jeton d'accès, en secondes
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      companyId:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                        format: email
+                      fullName:
+                        type: string
+                      role:
+                        type: string
+                        enum: *a1
+                      active:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                    required:
+                      - id
+                      - companyId
+                      - email
+                      - fullName
+                      - role
+                      - active
+                      - createdAt
+                required:
+                  - accessToken
+                  - refreshToken
+                  - tokenType
+                  - expiresIn
+                  - user
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "423":
+          description: Compte verrouillé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/refresh:
+    post:
+      summary: Renouveler les jetons
+      description: "Rotation : le jeton de rafraîchissement présenté est révoqué. Sa
+        réutilisation révoque toute la session."
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minLength: 20
+                  maxLength: 512
+              required:
+                - refreshToken
+      responses:
+        "200":
+          description: Nouveaux jetons
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  tokenType:
+                    type: string
+                    enum:
+                      - Bearer
+                  expiresIn:
+                    type: integer
+                    description: Durée de vie du jeton d'accès, en secondes
+                required:
+                  - accessToken
+                  - refreshToken
+                  - tokenType
+                  - expiresIn
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/logout:
+    post:
+      summary: Déconnexion (révoque le jeton de rafraîchissement)
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minLength: 20
+                  maxLength: 512
+              required:
+                - refreshToken
+      responses:
+        "204":
+          description: Déconnecté
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/me:
+    get:
+      summary: Utilisateur courant
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  fullName:
+                    type: string
+                  role:
+                    type: string
+                    enum: *a1
+                  active:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - email
+                  - fullName
+                  - role
+                  - active
+                  - createdAt
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/users:
+    get:
+      summary: Lister les utilisateurs de la société (admin)
+      tags:
+        - Utilisateurs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        companyId:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                          format: email
+                        fullName:
+                          type: string
+                        role:
+                          type: string
+                          enum: *a1
+                        active:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                      required:
+                        - id
+                        - companyId
+                        - email
+                        - fullName
+                        - role
+                        - active
+                        - createdAt
+                required:
+                  - data
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    post:
+      summary: Créer un utilisateur (admin)
+      tags:
+        - Utilisateurs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                role:
+                  type: string
+                  enum: *a1
+                password:
+                  type: string
+                  minLength: 10
+                  maxLength: 128
+              required:
+                - email
+                - fullName
+                - role
+                - password
+      responses:
+        "201":
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  fullName:
+                    type: string
+                  role:
+                    type: string
+                    enum: *a1
+                  active:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - email
+                  - fullName
+                  - role
+                  - active
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/auth/users/{id}:
+    patch:
+      summary: Changer le rôle ou désactiver un utilisateur (admin)
+      tags:
+        - Utilisateurs
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: *a1
+                active:
+                  type: boolean
+      responses:
+        "200":
+          description: Utilisateur mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  fullName:
+                    type: string
+                  role:
+                    type: string
+                    enum: *a1
+                  active:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - email
+                  - fullName
+                  - role
+                  - active
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+webhooks: {}

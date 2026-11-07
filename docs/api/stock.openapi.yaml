@@ -1,0 +1,1626 @@
+openapi: 3.1.0
+info:
+  title: Offshore Ops – stock-service
+  version: 0.1.0
+  description: "Articles, entrepôts, mouvements et niveaux de stock. Généré depuis
+    les schémas zod de @offshore/shared : ne pas éditer à la main."
+servers:
+  - url: http://localhost:4002
+    description: Local (via la gateway en sprint 2)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details: {}
+            correlationId:
+              type: string
+          required:
+            - code
+            - message
+      required:
+        - error
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        category:
+          type:
+            - string
+            - "null"
+        unit:
+          type: string
+        threshold:
+          type: integer
+        defaultWarehouseId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - companyId
+        - sku
+        - name
+        - category
+        - unit
+        - threshold
+        - defaultWarehouseId
+        - archived
+        - createdAt
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - companyId
+        - name
+        - createdAt
+    Movement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        toWarehouseId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        type:
+          type: string
+          enum: &a1
+            - IN
+            - OUT
+            - TRANSFER
+        quantity:
+          type: integer
+        reason:
+          type:
+            - string
+            - "null"
+        reference:
+          type:
+            - string
+            - "null"
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - companyId
+        - itemId
+        - warehouseId
+        - toWarehouseId
+        - type
+        - quantity
+        - reason
+        - reference
+        - createdBy
+        - createdAt
+    StockLevel:
+      type: object
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+      required:
+        - itemId
+        - sku
+        - name
+        - warehouseId
+        - quantity
+    MovementResult:
+      type: object
+      properties:
+        movement:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            companyId:
+              type: string
+              format: uuid
+            itemId:
+              type: string
+              format: uuid
+            warehouseId:
+              type: string
+              format: uuid
+            toWarehouseId:
+              type:
+                - string
+                - "null"
+              format: uuid
+            type:
+              type: string
+              enum: *a1
+            quantity:
+              type: integer
+            reason:
+              type:
+                - string
+                - "null"
+            reference:
+              type:
+                - string
+                - "null"
+            createdBy:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+          required:
+            - id
+            - companyId
+            - itemId
+            - warehouseId
+            - toWarehouseId
+            - type
+            - quantity
+            - reason
+            - reference
+            - createdBy
+            - createdAt
+        totalQuantity:
+          type: integer
+          description: Quantité totale de l'article, tous entrepôts
+        threshold:
+          type: integer
+        thresholdCrossed:
+          type: boolean
+          description: Vrai si ce mouvement a fait passer le total sous le seuil d'alerte
+      required:
+        - movement
+        - totalQuantity
+        - threshold
+        - thresholdCrossed
+  parameters: {}
+paths:
+  /api/v1/stock/items:
+    get:
+      summary: Lister les articles
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            maxLength: 100
+          required: false
+          name: search
+          in: query
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+            default: "false"
+          required: false
+          name: includeArchived
+          in: query
+      responses:
+        "200":
+          description: Page d’articles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        companyId:
+                          type: string
+                          format: uuid
+                        sku:
+                          type: string
+                        name:
+                          type: string
+                        category:
+                          type:
+                            - string
+                            - "null"
+                        unit:
+                          type: string
+                        threshold:
+                          type: integer
+                        defaultWarehouseId:
+                          type:
+                            - string
+                            - "null"
+                          format: uuid
+                        archived:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                      required:
+                        - id
+                        - companyId
+                        - sku
+                        - name
+                        - category
+                        - unit
+                        - threshold
+                        - defaultWarehouseId
+                        - archived
+                        - createdAt
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+                required:
+                  - data
+                  - page
+                  - limit
+                  - total
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    post:
+      summary: Créer un article (admin, magasinier)
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                category:
+                  type: string
+                  maxLength: 100
+                unit:
+                  type: string
+                  minLength: 1
+                  maxLength: 20
+                  default: pièce
+                threshold:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Seuil d'alerte (quantité totale)
+                defaultWarehouseId:
+                  type: string
+                  format: uuid
+              required:
+                - sku
+                - name
+      responses:
+        "201":
+          description: Article créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  sku:
+                    type: string
+                  name:
+                    type: string
+                  category:
+                    type:
+                      - string
+                      - "null"
+                  unit:
+                    type: string
+                  threshold:
+                    type: integer
+                  defaultWarehouseId:
+                    type:
+                      - string
+                      - "null"
+                    format: uuid
+                  archived:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - sku
+                  - name
+                  - category
+                  - unit
+                  - threshold
+                  - defaultWarehouseId
+                  - archived
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/stock/items/{id}:
+    get:
+      summary: Détail d’un article
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  sku:
+                    type: string
+                  name:
+                    type: string
+                  category:
+                    type:
+                      - string
+                      - "null"
+                  unit:
+                    type: string
+                  threshold:
+                    type: integer
+                  defaultWarehouseId:
+                    type:
+                      - string
+                      - "null"
+                    format: uuid
+                  archived:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - sku
+                  - name
+                  - category
+                  - unit
+                  - threshold
+                  - defaultWarehouseId
+                  - archived
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    patch:
+      summary: Modifier un article (admin, magasinier)
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                category:
+                  type: string
+                  maxLength: 100
+                unit:
+                  type: string
+                  minLength: 1
+                  maxLength: 20
+                  default: pièce
+                threshold:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Seuil d'alerte (quantité totale)
+                defaultWarehouseId:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Article modifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  sku:
+                    type: string
+                  name:
+                    type: string
+                  category:
+                    type:
+                      - string
+                      - "null"
+                  unit:
+                    type: string
+                  threshold:
+                    type: integer
+                  defaultWarehouseId:
+                    type:
+                      - string
+                      - "null"
+                    format: uuid
+                  archived:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - sku
+                  - name
+                  - category
+                  - unit
+                  - threshold
+                  - defaultWarehouseId
+                  - archived
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    delete:
+      summary: Archiver un article (suppression logique)
+      tags:
+        - Articles
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: id
+          in: path
+      responses:
+        "204":
+          description: Archivé
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/stock/warehouses:
+    get:
+      summary: Lister les entrepôts
+      tags:
+        - Entrepôts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        companyId:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                      required:
+                        - id
+                        - companyId
+                        - name
+                        - createdAt
+                required:
+                  - data
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    post:
+      summary: Créer un entrepôt (admin, magasinier)
+      tags:
+        - Entrepôts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+              required:
+                - name
+      responses:
+        "201":
+          description: Entrepôt créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  companyId:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - companyId
+                  - name
+                  - createdAt
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/stock/movements:
+    post:
+      summary: Enregistrer une entrée, une sortie ou un transfert (admin, magasinier)
+      description: "Transaction unique : mouvement + mise à jour des niveaux, avec
+        verrouillage de ligne. Une sortie qui rendrait le stock négatif est
+        refusée (409 INSUFFICIENT_STOCK). Un mouvement ne se modifie pas : on le
+        corrige par un mouvement inverse."
+      tags:
+        - Mouvements
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: *a1
+                itemId:
+                  type: string
+                  format: uuid
+                warehouseId:
+                  type: string
+                  format: uuid
+                  description: Entrepôt concerné (source pour OUT et TRANSFER)
+                toWarehouseId:
+                  type: string
+                  format: uuid
+                  description: Destination, uniquement pour TRANSFER
+                quantity:
+                  type: integer
+                  exclusiveMinimum: 0
+                reason:
+                  type: string
+                  maxLength: 200
+                reference:
+                  type: string
+                  maxLength: 100
+              required:
+                - type
+                - itemId
+                - warehouseId
+                - quantity
+      responses:
+        "201":
+          description: Mouvement enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movement:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      companyId:
+                        type: string
+                        format: uuid
+                      itemId:
+                        type: string
+                        format: uuid
+                      warehouseId:
+                        type: string
+                        format: uuid
+                      toWarehouseId:
+                        type:
+                          - string
+                          - "null"
+                        format: uuid
+                      type:
+                        type: string
+                        enum: *a1
+                      quantity:
+                        type: integer
+                      reason:
+                        type:
+                          - string
+                          - "null"
+                      reference:
+                        type:
+                          - string
+                          - "null"
+                      createdBy:
+                        type: string
+                        format: uuid
+                      createdAt:
+                        type: string
+                        format: date-time
+                    required:
+                      - id
+                      - companyId
+                      - itemId
+                      - warehouseId
+                      - toWarehouseId
+                      - type
+                      - quantity
+                      - reason
+                      - reference
+                      - createdBy
+                      - createdAt
+                  totalQuantity:
+                    type: integer
+                    description: Quantité totale de l'article, tous entrepôts
+                  threshold:
+                    type: integer
+                  thresholdCrossed:
+                    type: boolean
+                    description: Vrai si ce mouvement a fait passer le total sous le seuil d'alerte
+                required:
+                  - movement
+                  - totalQuantity
+                  - threshold
+                  - thresholdCrossed
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Rôle insuffisant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Introuvable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "409":
+          description: Conflit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+    get:
+      summary: Historique des mouvements
+      tags:
+        - Mouvements
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: itemId
+          in: query
+      responses:
+        "200":
+          description: Page de mouvements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        companyId:
+                          type: string
+                          format: uuid
+                        itemId:
+                          type: string
+                          format: uuid
+                        warehouseId:
+                          type: string
+                          format: uuid
+                        toWarehouseId:
+                          type:
+                            - string
+                            - "null"
+                          format: uuid
+                        type:
+                          type: string
+                          enum: *a1
+                        quantity:
+                          type: integer
+                        reason:
+                          type:
+                            - string
+                            - "null"
+                        reference:
+                          type:
+                            - string
+                            - "null"
+                        createdBy:
+                          type: string
+                          format: uuid
+                        createdAt:
+                          type: string
+                          format: date-time
+                      required:
+                        - id
+                        - companyId
+                        - itemId
+                        - warehouseId
+                        - toWarehouseId
+                        - type
+                        - quantity
+                        - reason
+                        - reference
+                        - createdBy
+                        - createdAt
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+                required:
+                  - data
+                  - page
+                  - limit
+                  - total
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+  /api/v1/stock/levels:
+    get:
+      summary: Niveaux de stock par article et entrepôt
+      tags:
+        - Niveaux
+      security:
+        - bearerAuth: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: itemId
+          in: query
+        - schema:
+            type: string
+            format: uuid
+          required: false
+          name: warehouseId
+          in: query
+      responses:
+        "200":
+          description: Niveaux
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        itemId:
+                          type: string
+                          format: uuid
+                        sku:
+                          type: string
+                        name:
+                          type: string
+                        warehouseId:
+                          type: string
+                          format: uuid
+                        quantity:
+                          type: integer
+                      required:
+                        - itemId
+                        - sku
+                        - name
+                        - warehouseId
+                        - quantity
+                required:
+                  - data
+        "400":
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                      details: {}
+                      correlationId:
+                        type: string
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+webhooks: {}
