@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { createLogger } from '@offshore/shared';
@@ -15,9 +16,14 @@ export async function makeApp() {
     AUTH_DATABASE_URL: 'unused',
     JWT_ACCESS_SECRET: 'test-secret-test-secret-test-secret-123',
   } as NodeJS.ProcessEnv);
+  const typedDb = db as unknown as Db;
   return {
-    app: createApp({ db: db as unknown as Db, env, logger: createLogger('test') }),
-    db: db as unknown as Db,
+    app: createApp({ db: typedDb, env, logger: createLogger('test') }),
+    db: typedDb,
+    /** Vide les tables entre deux tests (beaucoup plus rapide que de recréer la base). */
+    reset: async () => {
+      await typedDb.execute(sql`truncate table refresh_tokens, users, companies cascade`);
+    },
   };
 }
 

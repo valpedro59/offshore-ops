@@ -32,6 +32,7 @@ const ERROR_DESCRIPTIONS: Record<number, string> = {
   404: 'Introuvable',
   409: 'Conflit',
   423: 'Compte verrouillé',
+  429: 'Trop de requêtes (limitation de débit de la gateway)',
 };
 
 function addRoute(registry: OpenAPIRegistry, r: Route) {

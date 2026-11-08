@@ -6,6 +6,9 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'INSUFFICIENT_STOCK'
   | 'ACCOUNT_LOCKED'
+  | 'RATE_LIMITED'
+  | 'BAD_GATEWAY'
+  | 'GATEWAY_TIMEOUT'
   | 'INTERNAL_ERROR';
 
 export class AppError extends Error {
@@ -32,4 +35,10 @@ export const Errors = {
     new AppError(409, 'INSUFFICIENT_STOCK', 'Stock insuffisant pour cette sortie', { available }),
   locked: () =>
     new AppError(423, 'ACCOUNT_LOCKED', 'Compte temporairement verrouillé, réessayez plus tard'),
+  tooManyRequests: (retryAfterSeconds: number) =>
+    new AppError(429, 'RATE_LIMITED', 'Trop de requêtes, réessayez plus tard', {
+      retryAfterSeconds,
+    }),
+  badGateway: () => new AppError(502, 'BAD_GATEWAY', 'Service momentanément indisponible'),
+  gatewayTimeout: () => new AppError(504, 'GATEWAY_TIMEOUT', "Le service n'a pas répondu à temps"),
 };

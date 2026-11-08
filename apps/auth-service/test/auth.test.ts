@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { makeApp, registerBody } from './helpers';
@@ -6,10 +6,12 @@ import { users } from '../src/db/schema';
 
 let app: Awaited<ReturnType<typeof makeApp>>['app'];
 let db: Awaited<ReturnType<typeof makeApp>>['db'];
+let reset: Awaited<ReturnType<typeof makeApp>>['reset'];
 
-beforeEach(async () => {
-  ({ app, db } = await makeApp());
+beforeAll(async () => {
+  ({ app, db, reset } = await makeApp());
 });
+beforeEach(() => reset());
 
 const register = (over = {}) => request(app).post('/api/v1/auth/register').send(registerBody(over));
 

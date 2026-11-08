@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { as, makeApp, type TestApp } from './helpers';
 
@@ -8,12 +8,14 @@ const COMPANY_B = randomUUID();
 const B = '/api/v1/stock';
 
 let app: TestApp;
+let reset: () => Promise<void>;
 let keeper: ReturnType<typeof as>;
 
-beforeEach(async () => {
-  app = await makeApp();
+beforeAll(async () => {
+  ({ app, reset } = await makeApp());
   keeper = as(app, { companyId: COMPANY_A, role: 'storekeeper' });
 });
+beforeEach(() => reset());
 
 async function seed(threshold = 5) {
   const w1 = (await keeper.post(`${B}/warehouses`, { name: 'Magasin principal' })).body;
