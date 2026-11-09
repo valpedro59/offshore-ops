@@ -6,16 +6,16 @@ Plateforme SaaS B2B tout-en-un pour les entreprises parapétrolières et sous-tr
 
 ## État d'avancement
 
-| Sprint | Contenu                                                      | État                                 |
-| ------ | ------------------------------------------------------------ | ------------------------------------ |
-| 1      | Monorepo, `@offshore/shared`, `auth-service`, premiers tests | ✅                                   |
-| 2      | `stock-service` + gateway                                    | `stock-service` ✅ · gateway à faire |
-| 3      | Front Next.js                                                | à faire                              |
-| 4      | HSE (MongoDB), événements, audit                             | à faire                              |
-| 5      | CI/CD complète, E2E                                          | CI de base ✅                        |
-| 6      | Kubernetes + cloud                                           | à faire                              |
-| 7      | Assistant IA                                                 | à faire                              |
-| 8      | Performance, sécurité, finition                              | à faire                              |
+| Sprint | Contenu                                                      | État                            |
+| ------ | ------------------------------------------------------------ | ------------------------------- |
+| 1      | Monorepo, `@offshore/shared`, `auth-service`, premiers tests | ✅                              |
+| 2      | `stock-service` + gateway                                    | `stock-service` ✅ · gateway ✅ |
+| 3      | Front Next.js                                                | à faire                         |
+| 4      | HSE (MongoDB), événements, audit                             | à faire                         |
+| 5      | CI/CD complète, E2E                                          | CI de base ✅                   |
+| 6      | Kubernetes + cloud                                           | à faire                         |
+| 7      | Assistant IA                                                 | à faire                         |
+| 8      | Performance, sécurité, finition                              | à faire                         |
 
 ## Architecture cible
 

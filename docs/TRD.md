@@ -1,6 +1,6 @@
 # Offshore Ops – TRD
 
-*Technical Requirements Document · Version 0.1 · Auteur : Val Clancy Pedro*
+_Technical Requirements Document · Version 0.1 · Auteur : Val Clancy Pedro_
 
 Ce document décrit **comment** le système est construit : architecture, stack, données, sécurité, déploiement et qualité. Il répond au PRD et au FRD.
 
@@ -30,24 +30,24 @@ Next.js (front)
 
 ## 3. Stack technique
 
-| Couche | Choix | Justification |
-| --- | --- | --- |
-| Langage | TypeScript (strict) | Sûreté de typage, partage de types entre services et front |
-| Front | Next.js + React, Tailwind | SSR, routage, productivité |
-| Services | Node.js + Express (ou Fastify) | Déjà maîtrisé, écosystème riche |
-| SQL | PostgreSQL | Données relationnelles et transactionnelles (utilisateurs, stock) |
-| NoSQL | MongoDB | Documents flexibles (incidents, inspections, audit) |
-| ORM / accès | Drizzle ORM (Postgres), Mongoose ou driver natif (Mongo) | Typage, migrations |
-| Validation | zod | Contrats partagés dans `packages/shared` |
-| Cache / bus | Redis (cache, rate limiting, Streams ou BullMQ) | Un seul composant pour plusieurs besoins |
-| Auth | JWT (access + refresh), Argon2 | Standard, sans état côté services |
-| Logs | Pino | Rapide, JSON structuré |
-| Tests | Vitest, Supertest, Playwright | Unitaire, intégration, E2E |
-| Monorepo | pnpm workspaces | Partage de code, scripts communs |
-| Conteneurs | Docker, Docker Compose | Dev local reproductible |
-| Orchestration | Kubernetes (kind en local, puis cloud free tier) | Compétence demandée |
-| CI/CD | GitHub Actions | Intégré au dépôt |
-| IA | API Claude avec tool calling | Assistant FR-AI-\* |
+| Couche        | Choix                                                    | Justification                                                     |
+| ------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| Langage       | TypeScript (strict)                                      | Sûreté de typage, partage de types entre services et front        |
+| Front         | Next.js + React, Tailwind                                | SSR, routage, productivité                                        |
+| Services      | Node.js + Express (ou Fastify)                           | Déjà maîtrisé, écosystème riche                                   |
+| SQL           | PostgreSQL                                               | Données relationnelles et transactionnelles (utilisateurs, stock) |
+| NoSQL         | MongoDB                                                  | Documents flexibles (incidents, inspections, audit)               |
+| ORM / accès   | Drizzle ORM (Postgres), Mongoose ou driver natif (Mongo) | Typage, migrations                                                |
+| Validation    | zod                                                      | Contrats partagés dans `packages/shared`                          |
+| Cache / bus   | Redis (cache, rate limiting, Streams ou BullMQ)          | Un seul composant pour plusieurs besoins                          |
+| Auth          | JWT (access + refresh), Argon2                           | Standard, sans état côté services                                 |
+| Logs          | Pino                                                     | Rapide, JSON structuré                                            |
+| Tests         | Vitest, Supertest, Playwright                            | Unitaire, intégration, E2E                                        |
+| Monorepo      | pnpm workspaces                                          | Partage de code, scripts communs                                  |
+| Conteneurs    | Docker, Docker Compose                                   | Dev local reproductible                                           |
+| Orchestration | Kubernetes (kind en local, puis cloud free tier)         | Compétence demandée                                               |
+| CI/CD         | GitHub Actions                                           | Intégré au dépôt                                                  |
+| IA            | API Claude avec tool calling                             | Assistant FR-AI-\*                                                |
 
 ## 4. Services
 
@@ -91,12 +91,12 @@ Next.js (front)
 
 ### Postgres – stock-service
 
-| Table | Colonnes principales |
-| --- | --- |
-| `items` | id, company\_id, sku (unique par société), name, category, unit, threshold, archived\_at |
-| `warehouses` | id, company\_id, name |
+| Table             | Colonnes principales                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `items`           | id, company\_id, sku (unique par société), name, category, unit, threshold, archived\_at                                |
+| `warehouses`      | id, company\_id, name                                                                                                   |
 | `stock_movements` | id, company\_id, item\_id, warehouse\_id, type (IN/OUT/TRANSFER), quantity, reason, reference, created\_by, created\_at |
-| `stock_levels` | item\_id, warehouse\_id, quantity (contrainte ≥ 0) |
+| `stock_levels`    | item\_id, warehouse\_id, quantity (contrainte ≥ 0)                                                                      |
 
 Chaque table métier porte un `company_id` indexé : toutes les requêtes sont filtrées par société.
 
@@ -127,16 +127,16 @@ Chaque table métier porte un `company_id` indexé : toutes les requêtes sont f
 
 Exemples d'endpoints :
 
-| Méthode | Route | Description |
-| --- | --- | --- |
-| POST | `/api/v1/auth/login` | Connexion |
-| POST | `/api/v1/auth/refresh` | Renouvellement du jeton |
-| GET | `/api/v1/stock/items` | Liste des articles |
-| POST | `/api/v1/stock/movements` | Nouveau mouvement |
-| GET | `/api/v1/stock/levels` | Niveaux de stock |
-| POST | `/api/v1/hse/incidents` | Déclarer un incident |
-| GET | `/api/v1/audit/logs` | Journal d'audit (admin) |
-| POST | `/api/v1/assistant/messages` | Question à l'assistant |
+| Méthode | Route                        | Description             |
+| ------- | ---------------------------- | ----------------------- |
+| POST    | `/api/v1/auth/login`         | Connexion               |
+| POST    | `/api/v1/auth/refresh`       | Renouvellement du jeton |
+| GET     | `/api/v1/stock/items`        | Liste des articles      |
+| POST    | `/api/v1/stock/movements`    | Nouveau mouvement       |
+| GET     | `/api/v1/stock/levels`       | Niveaux de stock        |
+| POST    | `/api/v1/hse/incidents`      | Déclarer un incident    |
+| GET     | `/api/v1/audit/logs`         | Journal d'audit (admin) |
+| POST    | `/api/v1/assistant/messages` | Question à l'assistant  |
 
 ## 7. Sécurité
 
@@ -151,14 +151,14 @@ Exemples d'endpoints :
 
 ## 8. Exigences non fonctionnelles
 
-| Domaine | Exigence | Mesure |
-| --- | --- | --- |
-| Performance | p95 < 300 ms sur les lectures courantes, 200 utilisateurs simultanés | Test de charge k6 |
-| Disponibilité | 99 % en MVP | Sondes `/health` et `/ready` |
-| Scalabilité | Services sans état, mise à l'échelle horizontale | Réplicas Kubernetes |
-| Maintenabilité | Couverture de tests ≥ 70 % sur la logique métier, lint sans erreur | CI |
-| Portabilité | Lancement local en une commande | `docker compose up` |
-| Frugalité réseau | Pages légères, compression, cache HTTP | Audit Lighthouse |
+| Domaine          | Exigence                                                             | Mesure                       |
+| ---------------- | -------------------------------------------------------------------- | ---------------------------- |
+| Performance      | p95 < 300 ms sur les lectures courantes, 200 utilisateurs simultanés | Test de charge k6            |
+| Disponibilité    | 99 % en MVP                                                          | Sondes `/health` et `/ready` |
+| Scalabilité      | Services sans état, mise à l'échelle horizontale                     | Réplicas Kubernetes          |
+| Maintenabilité   | Couverture de tests ≥ 70 % sur la logique métier, lint sans erreur   | CI                           |
+| Portabilité      | Lancement local en une commande                                      | `docker compose up`          |
+| Frugalité réseau | Pages légères, compression, cache HTTP                               | Audit Lighthouse             |
 
 ## 9. Observabilité
 
@@ -187,14 +187,14 @@ Exemples d'endpoints :
 
 ## 12. Stratégie de tests
 
-| Niveau | Outil | Cible |
-| --- | --- | --- |
-| Unitaire | Vitest | Règles métier (stock négatif, RBAC, validation) |
-| Intégration | Vitest + Supertest + bases éphémères | Routes API, transactions, événements |
-| Contrat | Schémas OpenAPI / zod | Compatibilité entre services |
-| E2E | Playwright | Parcours A, B et C du FRD |
-| Charge | k6 | Lecture du stock, création de mouvements |
-| Sécurité | Audit de dépendances, tests d'autorisation | Isolation entre sociétés |
+| Niveau      | Outil                                      | Cible                                           |
+| ----------- | ------------------------------------------ | ----------------------------------------------- |
+| Unitaire    | Vitest                                     | Règles métier (stock négatif, RBAC, validation) |
+| Intégration | Vitest + Supertest + bases éphémères       | Routes API, transactions, événements            |
+| Contrat     | Schémas OpenAPI / zod                      | Compatibilité entre services                    |
+| E2E         | Playwright                                 | Parcours A, B et C du FRD                       |
+| Charge      | k6                                         | Lecture du stock, création de mouvements        |
+| Sécurité    | Audit de dépendances, tests d'autorisation | Isolation entre sociétés                        |
 
 ## 13. Développement assisté par IA
 
@@ -207,21 +207,21 @@ Le projet documente un usage réel d'agents IA dans le développement :
 
 ## 14. Architecture Decision Records prévus
 
-| ADR | Décision |
-| --- | --- |
+| ADR | Décision                                                        |
+| --- | --------------------------------------------------------------- |
 | 001 | Microservices plutôt que monolithe modulaire (et ses compromis) |
-| 002 | PostgreSQL pour le stock, MongoDB pour le HSE et l'audit |
-| 003 | Événements asynchrones pour l'audit et les alertes |
-| 004 | JWT sans état avec jeton de rafraîchissement rotatif |
-| 005 | Redis Streams ou BullMQ comme bus |
-| 006 | Stratégie multi-société : `company_id` dans chaque table |
-| 007 | Assistant IA en lecture seule avec les droits de l'utilisateur |
+| 002 | PostgreSQL pour le stock, MongoDB pour le HSE et l'audit        |
+| 003 | Événements asynchrones pour l'audit et les alertes              |
+| 004 | JWT sans état avec jeton de rafraîchissement rotatif            |
+| 005 | Redis Streams ou BullMQ comme bus                               |
+| 006 | Stratégie multi-société : `company_id` dans chaque table        |
+| 007 | Assistant IA en lecture seule avec les droits de l'utilisateur  |
 
 ## 15. Risques techniques
 
-| Risque | Mitigation |
-| --- | --- |
-| Complexité opérationnelle des microservices pour un développeur seul | 3 services au départ, outillage partagé, compose unique |
-| Coût du cloud | Free tier, cluster éteint hors démos |
-| Cohérence entre services (événements perdus ou dupliqués) | Consommateurs idempotents, nouvelle tentative avec file d'échecs |
-| Dérive de l'assistant IA (réponses fausses) | Outils à schéma strict, affichage des sources, lecture seule |
+| Risque                                                               | Mitigation                                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Complexité opérationnelle des microservices pour un développeur seul | 3 services au départ, outillage partagé, compose unique          |
+| Coût du cloud                                                        | Free tier, cluster éteint hors démos                             |
+| Cohérence entre services (événements perdus ou dupliqués)            | Consommateurs idempotents, nouvelle tentative avec file d'échecs |
+| Dérive de l'assistant IA (réponses fausses)                          | Outils à schéma strict, affichage des sources, lecture seule     |

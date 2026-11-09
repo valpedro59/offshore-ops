@@ -6,7 +6,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -21,6 +22,7 @@
     "zod": "3"
   },
   "devDependencies": {
-    "@types/express": "5"
+    "@types/express": "5",
+    "esbuild": "^0.28.2"
   }
 }
